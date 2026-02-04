@@ -4,7 +4,7 @@ Guidelines for AI agents working on this codebase.
 
 ## Project Overview
 
-This is a Cloudflare Worker that runs [OpenClaw](https://molt.bot/) in a Cloudflare Sandbox container. It provides:
+This is a Cloudflare Worker that runs [OpenClaw](https://github.com/openclaw/openclaw) in a Cloudflare Sandbox container. It provides:
 - Proxying to the OpenClaw gateway (web UI + WebSocket)
 - Admin UI at `/_admin/` for device management
 - API endpoints at `/api/*` for device pairing
@@ -203,7 +203,7 @@ OpenClaw has strict config validation. Common gotchas:
 - No `webchat` channel - the Control UI is served automatically
 - `gateway.bind` is not a config option - use `--bind` CLI flag
 
-See [OpenClaw docs](https://docs.molt.bot/gateway/configuration) for full schema.
+See [OpenClaw docs](https://docs.openclaw.ai/gateway/configuration) for full schema.
 
 ## Common Tasks
 
@@ -244,3 +244,29 @@ R2 is mounted via s3fs at `/data/openclaw`. Important gotchas:
 - **Never delete R2 data**: The mount directory `/data/openclaw` IS the R2 bucket. Running `rm -rf /data/openclaw/*` will DELETE your backup data. Always check mount status before any destructive operations.
 
 - **Process status**: The sandbox API's `proc.status` may not update immediately after a process completes. Instead of checking `proc.status === 'completed'`, verify success by checking for expected output (e.g., timestamp file exists after sync).
+
+## Design Decisions (idolum-ai fork)
+
+This fork makes several opinionated changes from the upstream cloudflare/moltworker:
+
+### 1. No "always-on" by default
+
+`SANDBOX_SLEEP_AFTER` is **required**. The upstream defaults to `never` (container stays alive indefinitely), which can lead to unexpected costs. We require users to explicitly set a sleep timeout (e.g., `10m`, `1h`).
+
+**Rationale:** Cold starts are 1-2 minutes, but that's a reasonable tradeoff for cost control. Users should make an informed choice about always-on vs. sleep behavior.
+
+### 2. Sync before sleep
+
+The container traps SIGTERM and syncs to R2 before exiting. This ensures no data loss between the last cron sync (every 5 minutes) and when the container sleeps.
+
+**Implementation:** `start-openclaw.sh` runs the gateway as a background process and waits for SIGTERM. On signal, it runs rsync to R2, then forwards SIGTERM to the gateway.
+
+### 3. Bucket naming convention
+
+R2 bucket name follows pattern: `${worker-name}-data`. Default worker name is `openclaw-sandbox`, so default bucket is `openclaw-sandbox-data`.
+
+**Rationale:** Makes it easier to deploy multiple instances (e.g., staging, production) without bucket name conflicts.
+
+### 4. Renamed moltbot → openclaw
+
+All references to "moltbot" renamed to "openclaw" to match upstream branding. Internal CLI is still `clawdbot` until upstream renames it.

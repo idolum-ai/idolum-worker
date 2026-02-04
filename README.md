@@ -1,12 +1,12 @@
 # OpenClaw on Cloudflare Workers
 
-Run [OpenClaw](https://github.com/openclaw/openclaw) (formerly OpenClaw, formerly Clawdbot) personal AI assistant in a [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/).
+Run [OpenClaw](https://github.com/openclaw/openclaw) (formerly Moltbot, formerly Clawdbot) personal AI assistant in a [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/).
 
-![moltworker architecture](./assets/logo.png)
+![openclaw architecture](./assets/logo.png)
 
 > **Experimental:** This is a proof of concept demonstrating that OpenClaw can run in Cloudflare Sandbox. It is not officially supported and may break without notice. Use at your own risk.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/moltworker)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/idolum-ai/idolum-worker)
 
 ## Requirements
 
@@ -21,7 +21,7 @@ The following Cloudflare features used by this project have free tiers:
 
 ## What is OpenClaw?
 
-[OpenClaw](https://github.com/openclaw/openclaw) (formerly OpenClaw, formerly Clawdbot) is a personal AI assistant with a gateway architecture that connects to multiple chat platforms. Key features:
+[OpenClaw](https://github.com/openclaw/openclaw) (formerly Moltbot, formerly Clawdbot) is a personal AI assistant with a gateway architecture that connects to multiple chat platforms. Key features:
 
 - **Control UI** - Web-based chat interface at the gateway
 - **Multi-channel support** - Telegram, Discord, Slack
@@ -29,11 +29,11 @@ The following Cloudflare features used by this project have free tiers:
 - **Persistent conversations** - Chat history and context across sessions
 - **Agent runtime** - Extensible AI capabilities with workspace and skills
 
-This project packages OpenClaw to run in a [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/) container, providing a fully managed, always-on deployment without needing to self-host. Optional R2 storage enables persistence across container restarts.
+This project packages OpenClaw to run in a [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/) container, providing a fully managed deployment without needing to self-host. R2 storage enables persistence across container restarts.
 
 ## Architecture
 
-![moltworker architecture](./assets/architecture.png)
+![openclaw architecture](./assets/architecture.png)
 
 ## Quick Start
 
@@ -208,9 +208,18 @@ R2 storage uses a backup/restore approach for simplicity:
 - A cron job runs every 5 minutes to sync the openclaw config to R2
 - You can also trigger a manual backup from the admin UI at `/_admin/`
 
+**Before container sleeps:**
+- When the container receives SIGTERM (before sleeping), it automatically syncs to R2
+- This ensures no data is lost between the last cron sync and sleep
+
 **In the admin UI:**
 - When R2 is configured, you'll see "Last backup: [timestamp]"
 - Click "Backup Now" to trigger an immediate sync
+
+**Bucket naming convention:**
+- Bucket name follows pattern: `${worker-name}-data`
+- Default: `openclaw-sandbox-data` (matching worker name `openclaw-sandbox`)
+- If you change the worker name in `wrangler.jsonc`, update the bucket name to match
 
 Without R2 credentials, openclaw still works but uses ephemeral storage (data lost on container restart).
 
