@@ -89,23 +89,21 @@ function validateRequiredEnv(env: OpenClawEnv): string[] {
 /**
  * Build sandbox options based on environment configuration.
  * 
- * SANDBOX_SLEEP_AFTER controls how long the container stays alive after inactivity:
- * - 'never' (default): Container stays alive indefinitely (recommended due to long cold starts)
+ * SANDBOX_SLEEP_AFTER (required) controls how long the container stays alive after inactivity:
  * - Duration string: e.g., '10m', '1h', '30s' - container sleeps after this period of inactivity
  * 
- * To reduce costs at the expense of cold start latency, set SANDBOX_SLEEP_AFTER to a duration:
+ * Set via:
  *   npx wrangler secret put SANDBOX_SLEEP_AFTER
  *   # Enter: 10m (or 1h, 30m, etc.)
  */
 function buildSandboxOptions(env: OpenClawEnv): SandboxOptions {
-  const sleepAfter = env.SANDBOX_SLEEP_AFTER?.toLowerCase() || 'never';
+  const sleepAfter = env.SANDBOX_SLEEP_AFTER?.toLowerCase();
 
-  // 'never' means keep the container alive indefinitely
-  if (sleepAfter === 'never') {
-    return { keepAlive: true };
+  if (!sleepAfter) {
+    throw new Error('SANDBOX_SLEEP_AFTER is required. Set it via: npx wrangler secret put SANDBOX_SLEEP_AFTER (e.g., 10m, 1h)');
   }
 
-  // Otherwise, use the specified duration
+  // Use the specified duration
   return { sleepAfter };
 }
 

@@ -56,6 +56,11 @@ export OPENCLAW_GATEWAY_TOKEN=$(openssl rand -hex 32)
 echo "Your gateway token: $OPENCLAW_GATEWAY_TOKEN"
 echo "$OPENCLAW_GATEWAY_TOKEN" | npx wrangler secret put OPENCLAW_GATEWAY_TOKEN
 
+# Set container sleep timeout (required)
+# Container sleeps after this period of inactivity to save costs
+npx wrangler secret put SANDBOX_SLEEP_AFTER
+# Enter: 10m (or 1h, 30m, etc.)
+
 # Deploy
 npm run deploy
 ```
@@ -211,16 +216,14 @@ Without R2 credentials, openclaw still works but uses ephemeral storage (data lo
 
 ## Container Lifecycle
 
-By default, the sandbox container stays alive indefinitely (`SANDBOX_SLEEP_AFTER=never`). This is recommended because cold starts take 1-2 minutes.
-
-To reduce costs for infrequently used deployments, you can configure the container to sleep after a period of inactivity:
+The `SANDBOX_SLEEP_AFTER` secret is **required** and controls how long the container stays alive after inactivity. When the container sleeps, the next request will trigger a cold start (1-2 minutes).
 
 ```bash
 npx wrangler secret put SANDBOX_SLEEP_AFTER
 # Enter: 10m (or 1h, 30m, etc.)
 ```
 
-When the container sleeps, the next request will trigger a cold start. If you have R2 storage configured, your paired devices and data will persist across restarts.
+If you have R2 storage configured, your paired devices and data will persist across restarts.
 
 ## Admin UI
 
@@ -369,7 +372,7 @@ The `AI_GATEWAY_*` variables take precedence over `ANTHROPIC_*` if both are set.
 | `OPENCLAW_GATEWAY_TOKEN` | Yes | Gateway token for authentication (pass via `?token=` query param) |
 | `DEV_MODE` | No | Set to `true` to skip CF Access auth + device pairing (local dev only) |
 | `DEBUG_ROUTES` | No | Set to `true` to enable `/debug/*` routes |
-| `SANDBOX_SLEEP_AFTER` | No | Container sleep timeout: `never` (default) or duration like `10m`, `1h` |
+| `SANDBOX_SLEEP_AFTER` | Yes | Container sleep timeout: duration like `10m`, `1h` (required) |
 | `R2_ACCESS_KEY_ID` | No | R2 access key for persistent storage |
 | `R2_SECRET_ACCESS_KEY` | No | R2 secret key for persistent storage |
 | `CF_ACCOUNT_ID` | No | Cloudflare account ID (required for R2 storage) |
