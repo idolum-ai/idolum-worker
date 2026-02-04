@@ -76,7 +76,7 @@ describe('mountR2Storage', () => {
 
       expect(result).toBe(true);
       expect(mountBucketMock).toHaveBeenCalledWith(
-        'openclaw-data',
+        'openclaw-sandbox-data',
         '/data/openclaw',
         {
           endpoint: 'https://account123.r2.cloudflarestorage.com',
@@ -166,6 +166,30 @@ describe('mountR2Storage', () => {
 
       expect(result).toBe(true);
       expect(console.log).toHaveBeenCalledWith('R2 bucket is mounted despite error');
+    });
+
+    it('returns true if error message indicates already mounted', async () => {
+      const { sandbox, mountBucketMock, startProcessMock } = createMockSandbox({ mounted: false });
+      mountBucketMock.mockRejectedValue(new Error('Mount failed: path already mounted'));
+      
+      const env = createMockEnvWithR2();
+
+      const result = await mountR2Storage(sandbox, env);
+
+      expect(result).toBe(true);
+      expect(console.log).toHaveBeenCalledWith('R2 bucket appears to be already mounted (from error message)');
+    });
+
+    it('returns true if error message indicates mount point is busy', async () => {
+      const { sandbox, mountBucketMock, startProcessMock } = createMockSandbox({ mounted: false });
+      mountBucketMock.mockRejectedValue(new Error('mount point is busy'));
+      
+      const env = createMockEnvWithR2();
+
+      const result = await mountR2Storage(sandbox, env);
+
+      expect(result).toBe(true);
+      expect(console.log).toHaveBeenCalledWith('R2 bucket appears to be already mounted (from error message)');
     });
   });
 });

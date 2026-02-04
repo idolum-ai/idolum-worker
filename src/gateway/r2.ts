@@ -62,6 +62,14 @@ export async function mountR2Storage(sandbox: Sandbox, env: OpenClawEnv): Promis
     const errorMessage = err instanceof Error ? err.message : String(err);
     console.log('R2 mount error:', errorMessage);
     
+    // If error indicates already mounted, treat as success
+    if (errorMessage.toLowerCase().includes('already mounted') || 
+        errorMessage.toLowerCase().includes('already exists') ||
+        errorMessage.toLowerCase().includes('mount point is busy')) {
+      console.log('R2 bucket appears to be already mounted (from error message)');
+      return true;
+    }
+    
     // Check again if it's mounted - the error might be misleading
     if (await isR2Mounted(sandbox)) {
       console.log('R2 bucket is mounted despite error');
