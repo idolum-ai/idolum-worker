@@ -1,5 +1,5 @@
 import type { Sandbox } from '@cloudflare/sandbox';
-import type { MoltbotEnv } from '../types';
+import type { OpenClawEnv } from '../types';
 import { R2_MOUNT_PATH } from '../config';
 import { mountR2Storage } from './r2';
 import { waitForProcess } from './utils';
@@ -12,7 +12,7 @@ export interface SyncResult {
 }
 
 /**
- * Sync moltbot config from container to R2 for persistence.
+ * Sync openclaw config from container to R2 for persistence.
  * 
  * This function:
  * 1. Mounts R2 if not already mounted
@@ -24,7 +24,7 @@ export interface SyncResult {
  * @param env - Worker environment bindings
  * @returns SyncResult with success status and optional error details
  */
-export async function syncToR2(sandbox: Sandbox, env: MoltbotEnv): Promise<SyncResult> {
+export async function syncToR2(sandbox: Sandbox, env: OpenClawEnv): Promise<SyncResult> {
   // Check if R2 is configured
   if (!env.R2_ACCESS_KEY_ID || !env.R2_SECRET_ACCESS_KEY || !env.CF_ACCOUNT_ID) {
     return { success: false, error: 'R2 storage is not configured' };

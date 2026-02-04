@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types';
-import { findExistingMoltbotProcess } from '../gateway';
+import { findExistingOpenClawProcess } from '../gateway';
 
 /**
  * Debug routes for inspecting container state
@@ -13,11 +13,11 @@ const debug = new Hono<AppEnv>();
 debug.get('/version', async (c) => {
   const sandbox = c.get('sandbox');
   try {
-    // Get moltbot version (CLI is still named clawdbot until upstream renames)
+    // Get openclaw version (CLI is still named clawdbot until upstream renames)
     const versionProcess = await sandbox.startProcess('clawdbot --version');
     await new Promise(resolve => setTimeout(resolve, 500));
     const versionLogs = await versionProcess.getLogs();
-    const moltbotVersion = (versionLogs.stdout || versionLogs.stderr || '').trim();
+    const openclawVersion = (versionLogs.stdout || versionLogs.stderr || '').trim();
 
     // Get node version
     const nodeProcess = await sandbox.startProcess('node --version');
@@ -26,7 +26,7 @@ debug.get('/version', async (c) => {
     const nodeVersion = (nodeLogs.stdout || '').trim();
 
     return c.json({
-      moltbot_version: moltbotVersion,
+      openclaw_version: openclawVersion,
       node_version: nodeVersion,
     });
   } catch (error) {
@@ -93,15 +93,15 @@ debug.get('/processes', async (c) => {
   }
 });
 
-// GET /debug/gateway-api - Probe the moltbot gateway HTTP API
+// GET /debug/gateway-api - Probe the openclaw gateway HTTP API
 debug.get('/gateway-api', async (c) => {
   const sandbox = c.get('sandbox');
   const path = c.req.query('path') || '/';
-  const MOLTBOT_PORT = 18789;
+  const OPENCLAW_PORT = 18789;
   
   try {
-    const url = `http://localhost:${MOLTBOT_PORT}${path}`;
-    const response = await sandbox.containerFetch(new Request(url), MOLTBOT_PORT);
+    const url = `http://localhost:${OPENCLAW_PORT}${path}`;
+    const response = await sandbox.containerFetch(new Request(url), OPENCLAW_PORT);
     const contentType = response.headers.get('content-type') || '';
     
     let body: string | object;
@@ -123,7 +123,7 @@ debug.get('/gateway-api', async (c) => {
   }
 });
 
-// GET /debug/cli - Test moltbot CLI commands (CLI is still named clawdbot)
+// GET /debug/cli - Test openclaw CLI commands (CLI is still named clawdbot)
 debug.get('/cli', async (c) => {
   const sandbox = c.get('sandbox');
   const cmd = c.req.query('cmd') || 'clawdbot --help';
@@ -173,11 +173,11 @@ debug.get('/logs', async (c) => {
         }, 404);
       }
     } else {
-      process = await findExistingMoltbotProcess(sandbox);
+      process = await findExistingOpenClawProcess(sandbox);
       if (!process) {
         return c.json({
           status: 'no_process',
-          message: 'No Moltbot process is currently running',
+          message: 'No OpenClaw process is currently running',
           stdout: '',
           stderr: '',
         });
@@ -341,7 +341,7 @@ debug.get('/env', async (c) => {
   return c.json({
     has_anthropic_key: !!c.env.ANTHROPIC_API_KEY,
     has_openai_key: !!c.env.OPENAI_API_KEY,
-    has_gateway_token: !!c.env.MOLTBOT_GATEWAY_TOKEN,
+    has_gateway_token: !!c.env.OPENCLAW_GATEWAY_TOKEN,
     has_r2_access_key: !!c.env.R2_ACCESS_KEY_ID,
     has_r2_secret_key: !!c.env.R2_SECRET_ACCESS_KEY,
     has_cf_account_id: !!c.env.CF_ACCOUNT_ID,
@@ -353,7 +353,7 @@ debug.get('/env', async (c) => {
   });
 });
 
-// GET /debug/container-config - Read the moltbot config from inside the container
+// GET /debug/container-config - Read the openclaw config from inside the container
 debug.get('/container-config', async (c) => {
   const sandbox = c.get('sandbox');
   

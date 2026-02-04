@@ -20,12 +20,12 @@ RUN ARCH="$(dpkg --print-architecture)" \
 # Install pnpm globally
 RUN npm install -g pnpm
 
-# Install moltbot (CLI is still named clawdbot until upstream renames)
+# Install openclaw (CLI is still named clawdbot until upstream renames)
 # Pin to specific version for reproducible builds
-RUN npm install -g clawdbot@2026.1.24-3 \
+RUN npm install -g clawdbot@2026.2.1 \
     && clawdbot --version
 
-# Create moltbot directories (paths still use clawdbot until upstream renames)
+# Create openclaw directories (paths still use clawdbot until upstream renames)
 # Templates are stored in /root/.clawdbot-templates for initialization
 RUN mkdir -p /root/.clawdbot \
     && mkdir -p /root/.clawdbot-templates \
@@ -34,11 +34,11 @@ RUN mkdir -p /root/.clawdbot \
 
 # Copy startup script
 # Build cache bust: 2026-01-28-v26-browser-skill
-COPY start-moltbot.sh /usr/local/bin/start-moltbot.sh
-RUN chmod +x /usr/local/bin/start-moltbot.sh
+COPY start-openclaw.sh /usr/local/bin/start-openclaw.sh
+RUN chmod +x /usr/local/bin/start-openclaw.sh
 
 # Copy default configuration template
-COPY moltbot.json.template /root/.clawdbot-templates/moltbot.json.template
+COPY openclaw.json.template /root/.clawdbot-templates/openclaw.json.template
 
 # Copy custom skills
 COPY skills/ /root/clawd/skills/

@@ -76,8 +76,8 @@ describe('mountR2Storage', () => {
 
       expect(result).toBe(true);
       expect(mountBucketMock).toHaveBeenCalledWith(
-        'moltbot-data',
-        '/data/moltbot',
+        'openclaw-data',
+        '/data/openclaw',
         {
           endpoint: 'https://account123.r2.cloudflarestorage.com',
           credentials: {
@@ -94,15 +94,15 @@ describe('mountR2Storage', () => {
         R2_ACCESS_KEY_ID: 'key123',
         R2_SECRET_ACCESS_KEY: 'secret',
         CF_ACCOUNT_ID: 'account123',
-        R2_BUCKET_NAME: 'moltbot-e2e-test123',
+        R2_BUCKET_NAME: 'openclaw-e2e-test123',
       });
 
       const result = await mountR2Storage(sandbox, env);
 
       expect(result).toBe(true);
       expect(mountBucketMock).toHaveBeenCalledWith(
-        'moltbot-e2e-test123',
-        '/data/moltbot',
+        'openclaw-e2e-test123',
+        '/data/openclaw',
         expect.any(Object)
       );
     });
@@ -117,7 +117,7 @@ describe('mountR2Storage', () => {
       expect(mountBucketMock).not.toHaveBeenCalled();
       expect(console.log).toHaveBeenCalledWith(
         'R2 bucket already mounted at',
-        '/data/moltbot'
+        '/data/openclaw'
       );
     });
 
@@ -128,7 +128,7 @@ describe('mountR2Storage', () => {
       await mountR2Storage(sandbox, env);
 
       expect(console.log).toHaveBeenCalledWith(
-        'R2 bucket mounted successfully - moltbot data will persist across sessions'
+        'R2 bucket mounted successfully - openclaw data will persist across sessions'
       );
     });
   });
@@ -156,7 +156,7 @@ describe('mountR2Storage', () => {
       const { sandbox, mountBucketMock, startProcessMock } = createMockSandbox();
       startProcessMock
         .mockResolvedValueOnce(createMockProcess(''))
-        .mockResolvedValueOnce(createMockProcess('s3fs on /data/moltbot type fuse.s3fs\n'));
+        .mockResolvedValueOnce(createMockProcess('s3fs on /data/openclaw type fuse.s3fs\n'));
       
       mountBucketMock.mockRejectedValue(new Error('Transient error'));
       

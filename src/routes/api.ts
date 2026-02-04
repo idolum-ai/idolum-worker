@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../types';
 import { createAccessMiddleware } from '../auth';
-import { ensureMoltbotGateway, findExistingMoltbotProcess, mountR2Storage, syncToR2, waitForProcess } from '../gateway';
+import { ensureOpenClawGateway, findExistingOpenClawProcess, mountR2Storage, syncToR2, waitForProcess } from '../gateway';
 import { R2_MOUNT_PATH } from '../config';
 
 // CLI commands can take 10-15 seconds to complete due to WebSocket connection overhead
@@ -28,10 +28,10 @@ adminApi.get('/devices', async (c) => {
   const sandbox = c.get('sandbox');
 
   try {
-    // Ensure moltbot is running first
-    await ensureMoltbotGateway(sandbox, c.env);
+    // Ensure openclaw is running first
+    await ensureOpenClawGateway(sandbox, c.env);
 
-    // Run moltbot CLI to list devices (CLI is still named clawdbot until upstream renames)
+    // Run openclaw CLI to list devices (CLI is still named clawdbot until upstream renames)
     // Must specify --url to connect to the gateway running in the same container
     const proc = await sandbox.startProcess('clawdbot devices list --json --url ws://localhost:18789');
     await waitForProcess(proc, CLI_TIMEOUT_MS);
@@ -81,10 +81,10 @@ adminApi.post('/devices/:requestId/approve', async (c) => {
   }
 
   try {
-    // Ensure moltbot is running first
-    await ensureMoltbotGateway(sandbox, c.env);
+    // Ensure openclaw is running first
+    await ensureOpenClawGateway(sandbox, c.env);
 
-    // Run moltbot CLI to approve the device (CLI is still named clawdbot)
+    // Run openclaw CLI to approve the device (CLI is still named clawdbot)
     const proc = await sandbox.startProcess(`clawdbot devices approve ${requestId} --url ws://localhost:18789`);
     await waitForProcess(proc, CLI_TIMEOUT_MS);
 
@@ -113,8 +113,8 @@ adminApi.post('/devices/approve-all', async (c) => {
   const sandbox = c.get('sandbox');
 
   try {
-    // Ensure moltbot is running first
-    await ensureMoltbotGateway(sandbox, c.env);
+    // Ensure openclaw is running first
+    await ensureOpenClawGateway(sandbox, c.env);
 
     // First, get the list of pending devices (CLI is still named clawdbot)
     const listProc = await sandbox.startProcess('clawdbot devices list --json --url ws://localhost:18789');
@@ -246,7 +246,7 @@ adminApi.post('/gateway/restart', async (c) => {
 
   try {
     // Find and kill the existing gateway process
-    const existingProcess = await findExistingMoltbotProcess(sandbox);
+    const existingProcess = await findExistingOpenClawProcess(sandbox);
     
     if (existingProcess) {
       console.log('Killing existing gateway process:', existingProcess.id);
@@ -260,7 +260,7 @@ adminApi.post('/gateway/restart', async (c) => {
     }
 
     // Start a new gateway in the background
-    const bootPromise = ensureMoltbotGateway(sandbox, c.env).catch((err) => {
+    const bootPromise = ensureOpenClawGateway(sandbox, c.env).catch((err) => {
       console.error('Gateway restart failed:', err);
     });
     c.executionCtx.waitUntil(bootPromise);
