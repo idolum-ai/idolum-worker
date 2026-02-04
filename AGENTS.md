@@ -267,6 +267,10 @@ R2 bucket name follows pattern: `${worker-name}-data`. Default worker name is `o
 
 **Rationale:** Makes it easier to deploy multiple instances (e.g., staging, production) without bucket name conflicts.
 
-### 4. Renamed moltbot → openclaw
+### 4. Fixed "already mounted" sync bug
+
+The upstream code fails when clicking "Sync to R2" if R2 is already mounted. We now parse the error message for "already mounted" / "mount point is busy" and treat it as success.
+
+### 5. Renamed moltbot → openclaw
 
 All references to "moltbot" renamed to "openclaw" to match upstream branding. Internal CLI is still `clawdbot` until upstream renames it.

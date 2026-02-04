@@ -56,6 +56,12 @@ This is a fork of [cloudflare/moltworker](https://github.com/cloudflare/moltwork
 
 **Our change:** Bucket name follows `${worker-name}-data` pattern. Default worker is `openclaw-sandbox`, so bucket is `openclaw-sandbox-data`. Change the worker name, update the bucket name to match.
 
+### 4. Fixed "already mounted" sync bug
+
+**Problem:** Clicking "Sync to R2" in the admin UI would fail with an error if R2 was already mounted (which it usually is after startup). The code tried to mount again, got an error, and the fallback detection was flaky.
+
+**Our change:** Parse the error message for "already mounted" / "mount point is busy" and treat it as success instead of failing.
+
 ## Architecture
 
 ![openclaw architecture](./assets/architecture.png)
