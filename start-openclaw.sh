@@ -288,7 +288,6 @@ EOFNODE
 # ============================================================
 # START GATEWAY
 # ============================================================
-# Note: R2 backup sync is handled by the Worker's cron trigger
 echo "Starting OpenClaw Gateway..."
 echo "Gateway will be available on port 18789"
 
@@ -299,10 +298,44 @@ rm -f "$CONFIG_DIR/gateway.lock" 2>/dev/null || true
 BIND_MODE="lan"
 echo "Dev mode: ${CLAWDBOT_DEV_MODE:-false}, Bind mode: $BIND_MODE"
 
+# Sync to R2 before shutdown (called on SIGTERM)
+sync_before_shutdown() {
+    echo "[shutdown] Received SIGTERM, syncing to R2 before exit..."
+    if [ -d "$BACKUP_DIR" ]; then
+        # Run rsync to backup config to R2
+        rsync -r --no-times --delete --exclude='*.lock' --exclude='*.log' --exclude='*.tmp' \
+            /root/.clawdbot/ "$BACKUP_DIR/clawdbot/" 2>/dev/null || true
+        rsync -r --no-times --delete \
+            /root/clawd/skills/ "$BACKUP_DIR/skills/" 2>/dev/null || true
+        date -Iseconds > "$BACKUP_DIR/.last-sync" 2>/dev/null || true
+        echo "[shutdown] R2 sync completed"
+    else
+        echo "[shutdown] R2 not mounted, skipping sync"
+    fi
+    # Forward SIGTERM to gateway process
+    if [ -n "$GATEWAY_PID" ]; then
+        echo "[shutdown] Stopping gateway (PID $GATEWAY_PID)..."
+        kill -TERM "$GATEWAY_PID" 2>/dev/null || true
+        wait "$GATEWAY_PID" 2>/dev/null || true
+    fi
+    echo "[shutdown] Shutdown complete"
+    exit 0
+}
+
+# Trap SIGTERM to sync before shutdown
+trap sync_before_shutdown SIGTERM
+
+# Start gateway as background process so we can trap signals
 if [ -n "$CLAWDBOT_GATEWAY_TOKEN" ]; then
     echo "Starting gateway with token auth..."
-    exec clawdbot gateway --port 18789 --verbose --allow-unconfigured --bind "$BIND_MODE" --token "$CLAWDBOT_GATEWAY_TOKEN"
+    clawdbot gateway --port 18789 --verbose --allow-unconfigured --bind "$BIND_MODE" --token "$CLAWDBOT_GATEWAY_TOKEN" &
 else
     echo "Starting gateway with device pairing (no token)..."
-    exec clawdbot gateway --port 18789 --verbose --allow-unconfigured --bind "$BIND_MODE"
+    clawdbot gateway --port 18789 --verbose --allow-unconfigured --bind "$BIND_MODE" &
 fi
+
+GATEWAY_PID=$!
+echo "Gateway started with PID $GATEWAY_PID"
+
+# Wait for gateway process (will be interrupted by SIGTERM trap)
+wait "$GATEWAY_PID"
