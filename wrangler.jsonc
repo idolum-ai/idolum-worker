@@ -56,10 +56,11 @@
     },
   ],
   // R2 bucket for persistent storage (openclaw data, conversations, etc.)
+  // Bucket name follows pattern: ${worker-name}-data
   "r2_buckets": [
     {
       "binding": "OPENCLAW_BUCKET",
-      "bucket_name": "openclaw-data",
+      "bucket_name": "openclaw-sandbox-data",
     },
   ],
   // Cron trigger to sync openclaw data to R2 every 5 minutes
