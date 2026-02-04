@@ -279,6 +279,51 @@ if (isOpenAI) {
     config.agents.defaults.model.primary = 'anthropic/claude-opus-4-5';
 }
 
+// Direct OpenAI configuration (without AI Gateway)
+if (process.env.OPENAI_API_KEY && !baseUrl) {
+    console.log('Configuring OpenAI provider (direct)');
+    config.models = config.models || {};
+    config.models.providers = config.models.providers || {};
+    config.models.providers.openai = {
+        apiKey: process.env.OPENAI_API_KEY,
+        api: 'openai-responses',
+        models: [
+            { id: 'gpt-4.1', name: 'GPT-4.1', contextWindow: 128000 },
+            { id: 'o3', name: 'o3', contextWindow: 200000 },
+            { id: 'o4-mini', name: 'o4-mini', contextWindow: 200000 },
+        ]
+    };
+    config.agents.defaults.models = config.agents.defaults.models || {};
+    config.agents.defaults.models['openai/gpt-4.1'] = { alias: 'GPT-4.1' };
+    config.agents.defaults.models['openai/o3'] = { alias: 'o3' };
+    config.agents.defaults.models['openai/o4-mini'] = { alias: 'o4-mini' };
+    // Set as primary if no Anthropic key
+    if (!process.env.ANTHROPIC_API_KEY && !process.env.AI_GATEWAY_API_KEY) {
+        config.agents.defaults.model.primary = 'openai/gpt-4.1';
+    }
+}
+
+// NVIDIA Kimi K2.5 configuration (OpenAI-compatible)
+if (process.env.NVIDIA_API_KEY) {
+    console.log('Configuring NVIDIA/Kimi provider');
+    config.models = config.models || {};
+    config.models.providers = config.models.providers || {};
+    config.models.providers.nvidia = {
+        baseUrl: 'https://integrate.api.nvidia.com/v1',
+        apiKey: process.env.NVIDIA_API_KEY,
+        api: 'openai-chat',
+        models: [
+            { id: 'moonshotai/kimi-k2.5', name: 'Kimi K2.5', contextWindow: 131072 },
+        ]
+    };
+    config.agents.defaults.models = config.agents.defaults.models || {};
+    config.agents.defaults.models['nvidia/moonshotai/kimi-k2.5'] = { alias: 'Kimi K2.5' };
+    // Set as primary if no other provider configured
+    if (!process.env.ANTHROPIC_API_KEY && !process.env.AI_GATEWAY_API_KEY && !process.env.OPENAI_API_KEY) {
+        config.agents.defaults.model.primary = 'nvidia/moonshotai/kimi-k2.5';
+    }
+}
+
 // Write updated config
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 console.log('Configuration updated successfully');

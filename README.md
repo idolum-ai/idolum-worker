@@ -11,7 +11,11 @@ Run [OpenClaw](https://github.com/openclaw/openclaw) (formerly Moltbot, formerly
 ## Requirements
 
 - [Workers Paid plan](https://www.cloudflare.com/plans/developer-platform/) ($5 USD/month) — required for Cloudflare Sandbox containers
-- [Anthropic API key](https://console.anthropic.com/) — for Claude access, or you can use AI Gateway's [Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/)
+- **One of the following API keys:**
+  - [Anthropic API key](https://console.anthropic.com/) — for Claude (recommended)
+  - [OpenAI API key](https://platform.openai.com/) — for GPT models
+  - [NVIDIA API key](https://build.nvidia.com/) — for Kimi K2.5 (free tier available)
+  - Or use AI Gateway's [Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/)
 
 The following Cloudflare features used by this project have free tiers:
 - Cloudflare Access (authentication)
@@ -74,10 +78,14 @@ _Cloudflare Sandboxes are available on the [Workers Paid plan](https://dash.clou
 # Install dependencies
 npm install
 
-# Set your API key (direct Anthropic access)
-npx wrangler secret put ANTHROPIC_API_KEY
+# Set your API key (pick one provider)
+npx wrangler secret put ANTHROPIC_API_KEY    # Claude (recommended)
+# OR
+npx wrangler secret put OPENAI_API_KEY       # GPT models
+# OR
+npx wrangler secret put NVIDIA_API_KEY       # Kimi K2.5 (free tier!)
 
-# Or use AI Gateway instead (see "Optional: Cloudflare AI Gateway" below)
+# Or use AI Gateway for any provider (see "Optional: Cloudflare AI Gateway" below)
 # npx wrangler secret put AI_GATEWAY_API_KEY
 # npx wrangler secret put AI_GATEWAY_BASE_URL
 
@@ -406,7 +414,8 @@ The `AI_GATEWAY_*` variables take precedence over `ANTHROPIC_*` if both are set.
 | `AI_GATEWAY_BASE_URL` | Yes* | AI Gateway endpoint URL (required when using `AI_GATEWAY_API_KEY`) |
 | `ANTHROPIC_API_KEY` | Yes* | Direct Anthropic API key (fallback if AI Gateway not configured) |
 | `ANTHROPIC_BASE_URL` | No | Direct Anthropic API base URL (fallback) |
-| `OPENAI_API_KEY` | No | OpenAI API key (alternative provider) |
+| `OPENAI_API_KEY` | No | OpenAI API key (GPT-4.1, o3, o4-mini) |
+| `NVIDIA_API_KEY` | No | NVIDIA API key for Kimi K2.5 (free tier available at build.nvidia.com) |
 | `CF_ACCESS_TEAM_DOMAIN` | Yes* | Cloudflare Access team domain (required for admin UI) |
 | `CF_ACCESS_AUD` | Yes* | Cloudflare Access application audience (required for admin UI) |
 | `OPENCLAW_GATEWAY_TOKEN` | Yes | Gateway token for authentication (pass via `?token=` query param) |

@@ -30,6 +30,9 @@ export function buildEnvVars(env: OpenClawEnv): Record<string, string> {
   if (!envVars.OPENAI_API_KEY && env.OPENAI_API_KEY) {
     envVars.OPENAI_API_KEY = env.OPENAI_API_KEY;
   }
+  if (env.NVIDIA_API_KEY) {
+    envVars.NVIDIA_API_KEY = env.NVIDIA_API_KEY;
+  }
 
   // Pass base URL (used by start-openclaw.sh to determine provider)
   if (normalizedBaseUrl) {
