@@ -31,6 +31,31 @@ The following Cloudflare features used by this project have free tiers:
 
 This project packages OpenClaw to run in a [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/) container, providing a fully managed deployment without needing to self-host. R2 storage enables persistence across container restarts.
 
+## Why This Fork? (idolum-ai)
+
+This is a fork of [cloudflare/moltworker](https://github.com/cloudflare/moltworker) with opinionated changes focused on **cost control** and **data safety**:
+
+### 1. No "always-on" by default
+
+**Problem:** The upstream defaults to `SANDBOX_SLEEP_AFTER=never`, keeping containers alive indefinitely. Cold starts are 1-2 minutes, so this seems convenient — but it can lead to unexpected costs.
+
+**Our change:** `SANDBOX_SLEEP_AFTER` is now **required**. You must explicitly choose a sleep timeout (e.g., `10m`, `1h`). This forces an informed decision about cost vs. latency tradeoffs.
+
+### 2. Automatic sync before shutdown
+
+**Problem:** Data syncs to R2 every 5 minutes via cron. If the container sleeps or gets redeployed between syncs, you lose up to 5 minutes of data.
+
+**Our change:** The container traps SIGTERM (sent before sleep or deployment) and syncs to R2 before exiting. This means:
+- **Sleep:** Data syncs before container sleeps
+- **Deploy:** Data syncs before old container is replaced
+- **No data loss** between cron syncs
+
+### 3. Bucket naming convention
+
+**Problem:** Hardcoded bucket name makes it awkward to run multiple instances.
+
+**Our change:** Bucket name follows `${worker-name}-data` pattern. Default worker is `openclaw-sandbox`, so bucket is `openclaw-sandbox-data`. Change the worker name, update the bucket name to match.
+
 ## Architecture
 
 ![openclaw architecture](./assets/architecture.png)
