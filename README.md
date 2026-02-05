@@ -60,7 +60,18 @@ This is a fork of [cloudflare/moltworker](https://github.com/cloudflare/moltwork
 
 **Our change:** Bucket name follows `${worker-name}-data` pattern. Default worker is `openclaw-sandbox`, so bucket is `openclaw-sandbox-data`. Change the worker name, update the bucket name to match.
 
-### 4. Fixed "already mounted" sync bug
+### 4. Multi-branch deployment
+
+**Problem:** Deploying multiple workers from one repo required manual renaming of config files.
+
+**Our change:** A `scripts/set-worker-name.sh` script automatically derives worker name, bucket name, etc. from the Git branch name at build time. This enables:
+- One repo with multiple deployment branches
+- Each branch = one worker (e.g., `idolum-janus`, `idolum-hermes`)
+- No manual config editing needed
+
+See [Deploying Additional Workers](#deploying-additional-workers) for the full workflow.
+
+### 5. Fixed "already mounted" sync bug
 
 **Problem:** Clicking "Sync to R2" in the admin UI would fail with an error if R2 was already mounted (which it usually is after startup). The code tried to mount again, got an error, and the fallback detection was flaky.
 
@@ -119,6 +130,73 @@ Replace `your-worker` with your actual worker subdomain and `YOUR_GATEWAY_TOKEN`
 > 2. [Pair your device](#device-pairing) via the admin UI at `/_admin/`
 
 You'll also likely want to [enable R2 storage](#persistent-storage-r2) so your paired devices and conversation history persist across container restarts (optional but recommended).
+
+## Deploying Additional Workers
+
+This repo supports deploying multiple workers from different branches. Each branch becomes its own worker with isolated storage.
+
+### Create a New Worker
+
+1. **Create a branch** from `idolum` (the template branch):
+   ```bash
+   git checkout idolum
+   git checkout -b idolum-myworker
+   git push origin idolum-myworker
+   ```
+
+2. **Create a CF Pages project** in the [Cloudflare Dashboard](https://dash.cloudflare.com/):
+   - Go to **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
+   - Select the `idolum-ai/idolum-worker` repo
+   - Set **Production branch** to your new branch (e.g., `idolum-myworker`)
+   - Set **Build command** to: `./scripts/set-worker-name.sh && npm run build`
+   - Set **Build output directory** to: `dist`
+
+3. **Create the R2 bucket** (name must match branch):
+   - Go to **R2** → **Create bucket**
+   - Name: `idolum-myworker-data` (branch name + `-data`)
+
+4. **Add secrets** in Pages project settings:
+   - `ANTHROPIC_API_KEY` (or other provider)
+   - `OPENCLAW_GATEWAY_TOKEN`
+   - `SANDBOX_SLEEP_AFTER` (e.g., `4h`)
+   - `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`
+   - `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `CF_ACCOUNT_ID`
+
+5. **Deploy!** The script automatically sets:
+   - Worker name → `idolum-myworker`
+   - R2 bucket → `idolum-myworker-data`
+   - Package name → `idolum-myworker`
+
+### How It Works
+
+The `scripts/set-worker-name.sh` script runs at build time and:
+1. Reads the branch name from `CF_PAGES_BRANCH` (provided by Cloudflare)
+2. Updates `package.json`, `wrangler.jsonc` with the branch name
+3. Sets the R2 bucket name to `{branch}-data`
+
+This means you never need to manually edit config files for new deployments.
+
+### Updating Workers
+
+Each worker lives in its own branch. To update a specific worker:
+```bash
+git checkout idolum-myworker
+# make changes
+git commit -m "Update something"
+git push origin idolum-myworker
+```
+
+To update all workers with upstream changes:
+```bash
+# Update template first
+git checkout idolum
+git pull upstream main  # or wherever upstream changes come from
+
+# Then merge into each worker branch
+git checkout idolum-myworker
+git merge idolum
+git push origin idolum-myworker
+```
 
 ## Setting Up the Admin UI
 
@@ -425,6 +503,7 @@ The `AI_GATEWAY_*` variables take precedence over `ANTHROPIC_*` if both are set.
 | `R2_ACCESS_KEY_ID` | No | R2 access key for persistent storage |
 | `R2_SECRET_ACCESS_KEY` | No | R2 secret key for persistent storage |
 | `CF_ACCOUNT_ID` | No | Cloudflare account ID (required for R2 storage) |
+| `R2_BUCKET_NAME` | No | Override R2 bucket name (default: `{worker-name}-data`) |
 | `TELEGRAM_BOT_TOKEN` | No | Telegram bot token |
 | `TELEGRAM_DM_POLICY` | No | Telegram DM policy: `pairing` (default) or `open` |
 | `DISCORD_BOT_TOKEN` | No | Discord bot token |
