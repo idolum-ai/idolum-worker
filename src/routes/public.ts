@@ -15,7 +15,7 @@ const publicRoutes = new Hono<AppEnv>();
 publicRoutes.get('/sandbox-health', (c) => {
   return c.json({
     status: 'ok',
-    service: 'idolum-janus',
+    service: 'idolum-worker',
     gateway_port: OPENCLAW_PORT,
   });
 });

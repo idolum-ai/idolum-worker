@@ -17,5 +17,5 @@ export const R2_MOUNT_PATH = '/data/openclaw';
  * Can be overridden via R2_BUCKET_NAME env var for test isolation.
  */
 export function getR2BucketName(env?: { R2_BUCKET_NAME?: string }): string {
-  return env?.R2_BUCKET_NAME || 'idolum-janus-data';
+  return env?.R2_BUCKET_NAME || 'idolum-worker-data';
 }
