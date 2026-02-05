@@ -14,10 +14,10 @@ if pgrep -f "openclaw gateway" > /dev/null 2>&1; then
     exit 0
 fi
 
-# Paths (clawdbot paths are used internally - upstream hasn't renamed yet)
-CONFIG_DIR="/root/.clawdbot"
-CONFIG_FILE="$CONFIG_DIR/clawdbot.json"
-TEMPLATE_DIR="/root/.clawdbot-templates"
+# Paths
+CONFIG_DIR="/root/.openclaw"
+CONFIG_FILE="$CONFIG_DIR/openclaw.json"
+TEMPLATE_DIR="/root/.openclaw-templates"
 TEMPLATE_FILE="$TEMPLATE_DIR/openclaw.json.template"
 BACKUP_DIR="/data/openclaw"
 
@@ -30,9 +30,9 @@ mkdir -p "$CONFIG_DIR"
 # ============================================================
 # RESTORE FROM R2 BACKUP
 # ============================================================
-# Check if R2 backup exists by looking for clawdbot.json
+# Check if R2 backup exists by looking for openclaw.json
 # The BACKUP_DIR may exist but be empty if R2 was just mounted
-# Note: backup structure is $BACKUP_DIR/clawdbot/ and $BACKUP_DIR/skills/
+# Note: backup structure is $BACKUP_DIR/openclaw/ and $BACKUP_DIR/skills/
 
 # Helper function to check if R2 backup is newer than local
 should_restore_from_r2() {
@@ -71,15 +71,15 @@ should_restore_from_r2() {
     fi
 }
 
-if [ -f "$BACKUP_DIR/clawdbot/clawdbot.json" ]; then
+if [ -f "$BACKUP_DIR/openclaw/openclaw.json" ]; then
     if should_restore_from_r2; then
-        echo "Restoring from R2 backup at $BACKUP_DIR/clawdbot..."
-        cp -a "$BACKUP_DIR/clawdbot/." "$CONFIG_DIR/"
+        echo "Restoring from R2 backup at $BACKUP_DIR/openclaw..."
+        cp -a "$BACKUP_DIR/openclaw/." "$CONFIG_DIR/"
         # Copy the sync timestamp to local so we know what version we have
         cp -f "$BACKUP_DIR/.last-sync" "$CONFIG_DIR/.last-sync" 2>/dev/null || true
         echo "Restored config from R2 backup"
     fi
-elif [ -f "$BACKUP_DIR/clawdbot.json" ]; then
+elif [ -f "$BACKUP_DIR/openclaw.json" ]; then
     # Legacy backup format (flat structure)
     if should_restore_from_r2; then
         echo "Restoring from legacy R2 backup at $BACKUP_DIR..."
@@ -135,7 +135,7 @@ fi
 node << EOFNODE
 const fs = require('fs');
 
-const configPath = '/root/.clawdbot/clawdbot.json';
+const configPath = '/root/.openclaw/openclaw.json';
 console.log('Updating config at:', configPath);
 let config = {};
 
@@ -336,7 +336,7 @@ echo "Starting OpenClaw Gateway..."
 echo "Gateway will be available on port 18789"
 
 # Clean up stale lock files
-rm -f /tmp/clawdbot-gateway.lock 2>/dev/null || true
+rm -f /tmp/openclaw-gateway.lock 2>/dev/null || true
 rm -f "$CONFIG_DIR/gateway.lock" 2>/dev/null || true
 
 BIND_MODE="lan"
@@ -348,7 +348,7 @@ sync_before_shutdown() {
     if [ -d "$BACKUP_DIR" ]; then
         # Run rsync to backup config to R2
         rsync -r --no-times --delete --exclude='*.lock' --exclude='*.log' --exclude='*.tmp' \
-            /root/.clawdbot/ "$BACKUP_DIR/clawdbot/" 2>/dev/null || true
+            /root/.openclaw/ "$BACKUP_DIR/openclaw/" 2>/dev/null || true
         rsync -r --no-times --delete \
             /root/clawd/skills/ "$BACKUP_DIR/skills/" 2>/dev/null || true
         date -Iseconds > "$BACKUP_DIR/.last-sync" 2>/dev/null || true

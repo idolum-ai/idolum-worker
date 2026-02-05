@@ -21,14 +21,13 @@ RUN ARCH="$(dpkg --print-architecture)" \
 RUN npm install -g pnpm
 
 # Install openclaw
-# Pin to specific version for reproducible builds
-RUN npm install -g openclaw@2026.2.2 \
+RUN npm install -g openclaw@latest \
     && openclaw --version
 
-# Create openclaw directories (paths still use clawdbot until upstream renames)
-# Templates are stored in /root/.clawdbot-templates for initialization
-RUN mkdir -p /root/.clawdbot \
-    && mkdir -p /root/.clawdbot-templates \
+# Create openclaw directories
+# Templates are stored in /root/.openclaw-templates for initialization
+RUN mkdir -p /root/.openclaw \
+    && mkdir -p /root/.openclaw-templates \
     && mkdir -p /root/clawd \
     && mkdir -p /root/clawd/skills
 
@@ -38,7 +37,7 @@ COPY start-openclaw.sh /usr/local/bin/start-openclaw.sh
 RUN chmod +x /usr/local/bin/start-openclaw.sh
 
 # Copy default configuration template
-COPY openclaw.json.template /root/.clawdbot-templates/openclaw.json.template
+COPY openclaw.json.template /root/.openclaw-templates/openclaw.json.template
 
 # Copy custom skills
 COPY skills/ /root/clawd/skills/
