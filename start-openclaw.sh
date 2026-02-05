@@ -8,9 +8,8 @@
 
 set -e
 
-# Check if clawdbot gateway is already running - bail early if so
-# Note: CLI is still named "clawdbot" until upstream renames it
-if pgrep -f "clawdbot gateway" > /dev/null 2>&1; then
+# Check if openclaw gateway is already running - bail early if so
+if pgrep -f "openclaw gateway" > /dev/null 2>&1; then
     echo "OpenClaw gateway is already running, exiting."
     exit 0
 fi
@@ -373,10 +372,10 @@ trap sync_before_shutdown SIGTERM
 # Start gateway as background process so we can trap signals
 if [ -n "$CLAWDBOT_GATEWAY_TOKEN" ]; then
     echo "Starting gateway with token auth..."
-    clawdbot gateway --port 18789 --verbose --allow-unconfigured --bind "$BIND_MODE" --token "$CLAWDBOT_GATEWAY_TOKEN" &
+    openclaw gateway --port 18789 --verbose --allow-unconfigured --bind "$BIND_MODE" --token "$CLAWDBOT_GATEWAY_TOKEN" &
 else
     echo "Starting gateway with device pairing (no token)..."
-    clawdbot gateway --port 18789 --verbose --allow-unconfigured --bind "$BIND_MODE" &
+    openclaw gateway --port 18789 --verbose --allow-unconfigured --bind "$BIND_MODE" &
 fi
 
 GATEWAY_PID=$!
