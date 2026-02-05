@@ -55,6 +55,8 @@ export async function mountR2Storage(sandbox: Sandbox, env: OpenClawEnv): Promis
         accessKeyId: env.R2_ACCESS_KEY_ID,
         secretAccessKey: env.R2_SECRET_ACCESS_KEY,
       },
+      // Allow mounting over non-empty directory (may have leftover data from previous mount)
+      s3fsOptions: ['nonempty'],
     });
     console.log('R2 bucket mounted successfully - openclaw data will persist across sessions');
     return true;
