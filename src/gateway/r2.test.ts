@@ -76,7 +76,7 @@ describe('mountR2Storage', () => {
 
       expect(result).toBe(true);
       expect(mountBucketMock).toHaveBeenCalledWith(
-        'idolum-worker-data',
+        'idolum-janus-data',
         '/data/openclaw',
         {
           endpoint: 'https://account123.r2.cloudflarestorage.com',
