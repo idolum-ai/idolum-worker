@@ -1,0 +1,104 @@
+name: Create Deployment Branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      worker_name:
+        description: 'Worker name (e.g., idolum-janus). Will also be used for bucket name as {worker_name}-data'
+        required: true
+        type: string
+
+jobs:
+  create-branch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Validate worker name
+        run: |
+          if [[ ! "${{ inputs.worker_name }}" =~ ^[a-z0-9][a-z0-9-]*[a-z0-9]$ ]]; then
+            echo "❌ Invalid worker name. Must be lowercase alphanumeric with hyphens, not starting/ending with hyphen."
+            exit 1
+          fi
+          echo "✅ Worker name valid: ${{ inputs.worker_name }}"
+
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check if branch already exists
+        run: |
+          if git ls-remote --heads origin ${{ inputs.worker_name }} | grep -q ${{ inputs.worker_name }}; then
+            echo "❌ Branch '${{ inputs.worker_name }}' already exists!"
+            exit 1
+          fi
+          echo "✅ Branch name available"
+
+      - name: Create deployment branch
+        run: |
+          git checkout -b ${{ inputs.worker_name }}
+
+      - name: Update wrangler.jsonc
+        run: |
+          # Update worker name
+          sed -i 's/"name": "openclaw-sandbox"/"name": "${{ inputs.worker_name }}"/' wrangler.jsonc
+          
+          # Update bucket name
+          sed -i 's/"bucket_name": "openclaw-sandbox-data"/"bucket_name": "${{ inputs.worker_name }}-data"/' wrangler.jsonc
+          
+          echo "📝 Updated wrangler.jsonc:"
+          grep -E '"name"|"bucket_name"' wrangler.jsonc
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add wrangler.jsonc
+          git commit -m "deploy: ${{ inputs.worker_name }} branch
+
+          - worker name: ${{ inputs.worker_name }}
+          - bucket: ${{ inputs.worker_name }}-data
+          
+          Created via create-deployment workflow"
+
+      - name: Push branch
+        run: |
+          git push origin ${{ inputs.worker_name }}
+
+      - name: Output next steps
+        run: |
+          echo ""
+          echo "============================================"
+          echo "✅ Deployment branch created: ${{ inputs.worker_name }}"
+          echo "============================================"
+          echo ""
+          echo "Next steps:"
+          echo ""
+          echo "1. Go to Cloudflare Workers & Pages dashboard"
+          echo "   https://dash.cloudflare.com/?to=/:account/workers-and-pages"
+          echo ""
+          echo "2. Create a new Worker or connect to existing"
+          echo ""
+          echo "3. Connect to Git repository:"
+          echo "   - Repository: idolum-ai/idolum-worker"
+          echo "   - Branch: ${{ inputs.worker_name }}"
+          echo ""
+          echo "4. Set required secrets (Settings → Variables → Secrets):"
+          echo "   - ANTHROPIC_API_KEY (or OPENAI_API_KEY or NVIDIA_API_KEY)"
+          echo "   - OPENCLAW_GATEWAY_TOKEN"
+          echo "   - SANDBOX_SLEEP_AFTER (e.g., 10m)"
+          echo ""
+          echo "5. Optional secrets for full functionality:"
+          echo "   - CF_ACCESS_TEAM_DOMAIN"
+          echo "   - CF_ACCESS_AUD"
+          echo "   - R2_ACCESS_KEY_ID"
+          echo "   - R2_SECRET_ACCESS_KEY"
+          echo "   - CF_ACCOUNT_ID"
+          echo ""
+          echo "6. Create R2 bucket named: ${{ inputs.worker_name }}-data"
+          echo ""
+          echo "7. Deploy!"
+          echo ""
