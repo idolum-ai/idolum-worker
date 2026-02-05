@@ -48,10 +48,18 @@ export async function mountR2Storage(sandbox: Sandbox, env: OpenClawEnv): Promis
   // Clear mount point if it has stale content (not mounted but has leftover files)
   // This works around s3fs "not empty" error when the SDK doesn't support nonempty option
   try {
-    await sandbox.exec(`rm -rf ${R2_MOUNT_PATH}/* ${R2_MOUNT_PATH}/.[!.]* 2>/dev/null || true; mkdir -p ${R2_MOUNT_PATH}`);
-    console.log('Cleared mount point for fresh mount');
+    console.log('Clearing mount point before R2 mount...');
+    const clearProc = await sandbox.startProcess(`rm -rf ${R2_MOUNT_PATH} && mkdir -p ${R2_MOUNT_PATH}`);
+    // Wait for clear to complete
+    let attempts = 0;
+    while (clearProc.status === 'running' && attempts < 20) {
+      await new Promise(r => setTimeout(r, 200));
+      attempts++;
+    }
+    const clearLogs = await clearProc.getLogs();
+    console.log('Clear mount point result:', clearProc.status, 'stdout:', clearLogs.stdout, 'stderr:', clearLogs.stderr);
   } catch (err) {
-    console.log('Could not clear mount point (may be fine):', err);
+    console.log('Could not clear mount point:', err);
   }
 
   const bucketName = getR2BucketName(env);
