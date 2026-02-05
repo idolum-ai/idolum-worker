@@ -10,7 +10,7 @@ This is a Cloudflare Worker that runs [OpenClaw](https://github.com/openclaw/ope
 - API endpoints at `/api/*` for device pairing
 - Debug endpoints at `/debug/*` for troubleshooting
 
-**Note:** The CLI tool is still named `clawdbot` (upstream hasn't renamed yet), so CLI commands and internal config paths still use that name.
+**Note:** The CLI tool is `openclaw` and config lives at `/root/.openclaw/openclaw.json`.
 
 ## Project Structure
 
@@ -49,10 +49,9 @@ src/
 
 ### CLI Commands
 
-When calling the openclaw CLI from the worker, always include `--url ws://localhost:18789`.
-Note: The CLI is still named `clawdbot` until upstream renames it:
+When calling the openclaw CLI from the worker, always include `--url ws://localhost:18789`:
 ```typescript
-sandbox.startProcess('clawdbot devices list --json --url ws://localhost:18789')
+sandbox.startProcess('openclaw devices list --json --url ws://localhost:18789')
 ```
 
 CLI commands take 10-15 seconds due to WebSocket connection overhead. Use `waitForProcess()` helper in `src/routes/api.ts`.
@@ -176,7 +175,7 @@ The Dockerfile includes a cache bust comment. When changing `openclaw.json.templ
 
 OpenClaw configuration is built at container startup:
 
-1. `openclaw.json.template` is copied to `~/.clawdbot/clawdbot.json` (internal path unchanged)
+1. `openclaw.json.template` is copied to `/root/.openclaw/openclaw.json`
 2. `start-openclaw.sh` updates the config with values from environment variables
 3. Gateway starts with `--allow-unconfigured` flag (skips onboarding wizard)
 
@@ -273,4 +272,4 @@ The upstream code fails when clicking "Sync to R2" if R2 is already mounted. We 
 
 ### 5. Renamed moltbot → openclaw
 
-All references to "moltbot" renamed to "openclaw" to match upstream branding. Internal CLI is still `clawdbot` until upstream renames it.
+All references to "moltbot" renamed to "openclaw" to match upstream branding. CLI is now `openclaw`, config at `/root/.openclaw/openclaw.json`.
